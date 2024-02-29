@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as argon from 'argon2';
@@ -6,6 +11,7 @@ import * as argon from 'argon2';
 import { IUser } from 'src/database/interface';
 import { SignupDTO } from './dto';
 import { JwtService } from '@nestjs/jwt';
+import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class AuthService {
@@ -61,11 +67,29 @@ export class AuthService {
   }
 
   // Sign JWT
-  async signToken(id: number, email: string, role: string): Promise<string> {
-    const payload = { id, email, role };
+  async signToken(_id: string, email: string, role: string): Promise<string> {
+    const payload = { _id, email, role };
 
     const accessToken = await this.jwt.signAsync(payload);
 
     return accessToken;
+  }
+
+  async verifyJWT(userId: string): Promise<any> {
+    try {
+      const user = await this.userModel
+        .findOne({
+          _id: userId,
+        })
+        .select('-password');
+
+      if (!user) {
+        throw new UnauthorizedException();
+      }
+
+      return user;
+    } catch (error) {
+      throw error;
+    }
   }
 }

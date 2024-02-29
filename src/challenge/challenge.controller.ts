@@ -6,12 +6,16 @@ import {
   HttpStatus,
   Param,
   Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ChallengeService } from './challenge.service';
-import { ChallengeDTO } from './dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ChallengeDTO, JoinChallengeDTO } from './dto';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { AuthGuard } from 'src/auth/guards';
 
 @ApiTags('Challenge')
+@ApiBearerAuth()
 @Controller('challenges')
 export class ChallengeController {
   constructor(private readonly challengeService: ChallengeService) {}
@@ -32,5 +36,25 @@ export class ChallengeController {
   @HttpCode(HttpStatus.OK)
   createChallenge(@Body() payload: ChallengeDTO) {
     return this.challengeService.createChallenge(payload);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('join-challenge')
+  @HttpCode(HttpStatus.OK)
+  joinChallenge(@Body() payload: JoinChallengeDTO, @Req() req) {
+    return this.challengeService.joinChallenge(payload, req.user._id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/auth/:challengeIdAuth')
+  @HttpCode(HttpStatus.OK)
+  getChallengeAuth(
+    @Param('challengeIdAuth') challengeIdAuth: string,
+    @Req() req,
+  ) {
+    return this.challengeService.getChallengeAuth(
+      challengeIdAuth,
+      req.user._id,
+    );
   }
 }
